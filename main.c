@@ -2,6 +2,7 @@
 #include <allegro.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #define ERREUR(msg){\
     set_gfx_mode(GFX_TEXT,0,0,0,0);\
@@ -17,6 +18,7 @@
 #define ETAT_MENU       0
 #define ETAT_JEU        1
 #define ETAT_GAME_OVER  2
+#define ETAT_REGLES     3
 
 typedef struct {
     float x, y;
@@ -36,6 +38,57 @@ typedef struct {
     int largeur, hauteur;
     int vitesse;
 } Joueur;
+typedef struct {
+    int x, y;
+    int largeur, hauteur;
+    char texte[50];
+    int survol;   // 1 si la souris est dessus
+} Bouton;
+
+
+
+// Sauvegarder dans un fichier texte
+void sauvegarder_partie(const char *pseudo, int score, int niveau)
+{
+    FILE *f = fopen("sauvegarde.txt", "w");  // "w" = ecrire (ecrase l'ancien)
+    if (f == NULL)
+    {
+        allegro_message("Impossible d'ecrire le fichier sauvegarde.txt");
+        return;
+    }
+    fprintf(f, "%s %d %d\n", pseudo, score, niveau);
+    fclose(f);
+}
+
+// Charger depuis le fichier texte
+// Retourne 1 si reussi, 0 si le fichier n'existe pas
+int charger_partie(char *pseudo, int *score, int *niveau)
+{
+    FILE *f = fopen("sauvegarde.txt", "r");  // "r" = lire
+    if (f == NULL)
+    {
+        return 0;  // pas de fichier de sauvegarde
+    }
+    fscanf(f, "%s %d %d", pseudo, score, niveau);
+    fclose(f);
+    return 1;
+}
+
+void dessiner_bouton(BITMAP *buffer, Bouton *b)
+{
+    int couleur = b->survol ? makecol(100,100,255) : makecol(50,50,150);
+    rectfill(buffer, b->x, b->y, b->x + b->largeur, b->y + b->hauteur, couleur);
+    rect(buffer, b->x, b->y, b->x + b->largeur, b->y + b->hauteur, makecol(255,255,255));
+    textout_centre_ex(buffer, font, b->texte,
+                      b->x + b->largeur/2, b->y + b->hauteur/2 - 4,
+                      makecol(255,255,255), -1);
+}
+
+int souris_dans_bouton(Bouton *b)
+{
+    return (mouse_x >= b->x && mouse_x <= b->x + b->largeur &&
+            mouse_y >= b->y && mouse_y <= b->y + b->hauteur);
+}
 
 int main(void)
 {
@@ -53,12 +106,15 @@ int main(void)
     int niveau_gagner=0;
     int timer_niveau=0;
     int etat = ETAT_MENU;
-
-
+    int clic_presse=0;
+    char pseudo[50]="Koyoz";
+    int deja_sauvegarde=0;
 
 
     allegro_init();
     install_keyboard();
+    install_mouse();
+    show_mouse(screen);
     srand(time(NULL));
     if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, Ecran_X,Ecran_Y, 0, 0)!=0)
         ERREUR(allegro_error);
@@ -89,39 +145,101 @@ int main(void)
     BITMAP *buffer = create_bitmap(Ecran_X,Ecran_Y);
 
 
+    Bouton bouton_jouer;
+    bouton_jouer.x = Ecran_X/2 - 100;
+    bouton_jouer.y = 300;
+    bouton_jouer.largeur = 200;
+    bouton_jouer.hauteur = 50;
+    strcpy(bouton_jouer.texte, "JOUER");
+    bouton_jouer.survol = 0;
 
+    Bouton bouton_regles;
+    bouton_regles.x = Ecran_X/2 - 100;
+    bouton_regles.y = 370;
+    bouton_regles.largeur = 200;
+    bouton_regles.hauteur = 50;
+    strcpy(bouton_regles.texte, "REGLES");
+    bouton_regles.survol = 0;
+
+    Bouton bouton_quitter;
+    bouton_quitter.x = Ecran_X/2 - 100;
+    bouton_quitter.y = 440;
+    bouton_quitter.largeur = 200;
+    bouton_quitter.hauteur = 50;
+    strcpy(bouton_quitter.texte, "QUITTER");
+    bouton_quitter.survol = 0;
+
+    Bouton bouton_retour;
+    bouton_retour.x = Ecran_X/2 - 100;
+    bouton_retour.y = 500;
+    bouton_retour.largeur = 200;
+    bouton_retour.hauteur = 50;
+    strcpy(bouton_retour.texte, "RETOUR");
+    bouton_retour.survol = 0;
 
     while (!fin)
     {
         clear(buffer);
+       show_mouse(screen);
+        if (key[KEY_TAB])
+        {
+            etat = ETAT_JEU;
+        }
         if (etat == ETAT_MENU)
         {
-            // Afficher le menu, attendre que le joueur appuie sur ESPACE
+            // Survol
+            bouton_jouer.survol = souris_dans_bouton(&bouton_jouer);
+            bouton_regles.survol = souris_dans_bouton(&bouton_regles);
+            bouton_quitter.survol = souris_dans_bouton(&bouton_quitter);
+
+            // Titre
             textout_centre_ex(buffer, font, "SUPER BULLES",
-                              Ecran_X/2, 200, makecol(255,255,0), -1);
-            textout_centre_ex(buffer, font, "Appuyez sur TAB pour jouer",
-                              Ecran_X/2, 300, makecol(255,255,255), -1);
+                              Ecran_X/2, 150, makecol(255,255,0), -1);
+            textout_centre_ex(buffer,font, "TAB pour jouer ou click pour choisir le menu",
+                Ecran_X/2,130,makecol(200,100,50),-1);
 
-            if (key[KEY_TAB])
+            // Dessin des boutons
+            dessiner_bouton(buffer, &bouton_jouer);
+            dessiner_bouton(buffer, &bouton_regles);
+            dessiner_bouton(buffer, &bouton_quitter);
+
+            // Clics (avec protection anti-maintien)
+            if ((mouse_b & 1) && !clic_presse)
             {
-                etat = ETAT_JEU;
-                // Reset du jeu
-                score = 0;
-                niveau = 1;
-                // Nettoyer bulles et tirs
-                for (i = 0; i < Max_Bulle; i++) bulles[i].actif = 0;
-                for (i = 0; i < Max_Tire; i++) tirs[i].actif = 0;
-                // Creer la premiere bulle
-                bulles[0].actif = 1;
-                bulles[0].x = 400;
-                bulles[0].y = 50;
-                bulles[0].vx = 2;
-                bulles[0].vy = 0;
-                bulles[0].taille = 3;
-                bulles[0].rayon = 50;
-            }
-        }
+                clic_presse = 1;
+                if (bouton_jouer.survol)
+                {
+                    etat = ETAT_JEU;
+                    score = 0;
+                    niveau = 1;
+                    niveau_gagner = 0;
+                    timer_niveau = 0;
+                    deja_sauvegarde = 0;
 
+                    // Nettoyer toutes les bulles et tirs
+                    for (i = 0; i < Max_Bulle; i++)bulles[i].actif = 0;
+                    for (i = 0; i < Max_Tire; i++) tirs[i].actif = 0;
+
+                    // Creer la premiere bulle
+                    bulles[0].actif = 1;
+                    bulles[0].x = 400;
+                    bulles[0].y = 50;
+                    bulles[0].vx = 2;
+                    bulles[0].vy = 0;
+                    bulles[0].taille = 3;
+                    bulles[0].rayon = 50;
+
+                    // Replacer le joueur a gauche
+                    x = 50;
+                }
+                if (bouton_quitter.survol) fin = 1;
+                if (bouton_regles.survol)
+                {
+                    etat = ETAT_REGLES;
+                }
+            }
+            if (!(mouse_b & 1)) clic_presse = 0;
+        }
         else if (etat == ETAT_JEU)
         {
             if (key[KEY_LEFT])  x -= px;
@@ -154,7 +272,7 @@ int main(void)
                        bulles[i].x - bulles[i].rayon < x + tx &&    // bulle pas trop a droite
                         bulles[i].y+ bulles[i].rayon> y)           // bulle assez basse
                     {
-
+                        sauvegarder_partie(pseudo, score, niveau);
                         etat=ETAT_GAME_OVER;  // game over
                     }
                     if (bulles[i].x - bulles[i].rayon< 0)
@@ -279,6 +397,7 @@ int main(void)
 
                 if (timer_niveau > 120)
                 {
+                    sauvegarder_partie(pseudo, score, niveau);
                     niveau++;
 
                     // Nettoyer tout
@@ -305,9 +424,23 @@ int main(void)
                     timer_niveau = 0;
                 }
             }
+            char texte_score[50];
+            sprintf(texte_score, "Score : %d", score);
+            textout_ex(buffer, font, texte_score, 10, 10, makecol(255, 255, 255), -1);
+
+            char texte_niveau[30];
+            sprintf(texte_niveau, "Niveau : %d", niveau);
+            textout_ex(buffer, font, texte_niveau, Ecran_X - 120, 10, makecol(255, 255, 255), -1);
         }
+
+
         else if (etat == ETAT_GAME_OVER)
         {
+            if (!deja_sauvegarde)
+            {
+                sauvegarder_partie(pseudo, score, niveau);
+                deja_sauvegarde = 1;
+            }
             // Afficher game over + score
             textout_centre_ex(buffer, font, "GAME OVER",
                               Ecran_X/2, 200, makecol(255,50,50), -1);
@@ -315,18 +448,56 @@ int main(void)
             sprintf(texte, "Score final : %d", score);
             textout_centre_ex(buffer, font, texte,
                               Ecran_X/2, 250, makecol(255,255,255), -1);
-            textout_centre_ex(buffer, font, "Appuyez sur ESPACE pour rejouer",
+            textout_centre_ex(buffer, font, "Appuyez sur entrée pour rejouer",
                               Ecran_X/2, 350, makecol(255,255,255), -1);
 
-            if (key[KEY_SPACE])
+            if (key[KEY_ENTER])
             {
                 etat = ETAT_MENU;
             }
         }
+        else if (etat == ETAT_REGLES)
+        {
+            // Titre
+            textout_centre_ex(buffer, font, "REGLES DU JEU",
+                              Ecran_X/2, 80, makecol(255,255,0), -1);
+
+            // Les regles, ligne par ligne
+            textout_centre_ex(buffer, font, "- Detruisez toutes les bulles pour passer au niveau suivant",
+                              Ecran_X/2, 150, makecol(255,255,255), -1);
+            textout_centre_ex(buffer, font, "- Les grosses bulles se divisent en 2 petites quand vous les touchez",
+                              Ecran_X/2, 180, makecol(255,255,255), -1);
+            textout_centre_ex(buffer, font, "- Si une bulle vous touche, c'est perdu !",
+                              Ecran_X/2, 210, makecol(255,255,255), -1);
+            textout_centre_ex(buffer, font, "- Utilisez les fleches pour vous deplacer",
+                              Ecran_X/2, 260, makecol(200,200,255), -1);
+            textout_centre_ex(buffer, font, "- Maintenez ESPACE pour tirer",
+                              Ecran_X/2, 290, makecol(200,200,255), -1);
+            textout_centre_ex(buffer, font, "- Les petites bulles rapportent plus de points !",
+                              Ecran_X/2, 320, makecol(200,200,255), -1);
+
+            // Gerer le bouton RETOUR
+            bouton_retour.survol = souris_dans_bouton(&bouton_retour);
+            dessiner_bouton(buffer, &bouton_retour);
+
+            // Clic sur retour
+            if ((mouse_b & 1) && !clic_presse)
+            {
+                clic_presse = 1;
+                if (bouton_retour.survol)
+                {
+                    etat = ETAT_MENU;
+                }
+            }
+            if (!(mouse_b & 1)) clic_presse = 0;
+        }
 
         if (key[KEY_ESC]) fin = 1;
 
+
+        scare_mouse();
         blit(buffer, screen, 0, 0, 0, 0, Ecran_X, Ecran_Y);
+        unscare_mouse();
         rest(16);
     }
   destroy_bitmap(buffer);
