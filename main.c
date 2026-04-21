@@ -15,10 +15,14 @@
 #define Ecran_Y 600
 #define Max_Tire 100
 #define Max_Bulle 10
+#define MAX_SAUVEGARDES 10
 #define ETAT_MENU       0
 #define ETAT_JEU        1
 #define ETAT_GAME_OVER  2
 #define ETAT_REGLES     3
+#define ETAT_PSEUDO     4
+#define ETAT_REPRENDRE  5
+
 
 typedef struct {
     float x, y;
@@ -45,20 +49,14 @@ typedef struct {
     int survol;   // 1 si la souris est dessus
 } Bouton;
 
+typedef struct {
+    char pseudo[50];
+    int score;
+    int niveau;
+} Sauvegarde;
 
 
-// Sauvegarder dans un fichier texte
-void sauvegarder_partie(const char *pseudo, int score, int niveau)
-{
-    FILE *f = fopen("sauvegarde.txt", "w");  // "w" = ecrire (ecrase l'ancien)
-    if (f == NULL)
-    {
-        allegro_message("Impossible d'ecrire le fichier sauvegarde.txt");
-        return;
-    }
-    fprintf(f, "%s %d %d\n", pseudo, score, niveau);
-    fclose(f);
-}
+
 
 // Charger depuis le fichier texte
 // Retourne 1 si reussi, 0 si le fichier n'existe pas
@@ -72,6 +70,77 @@ int charger_partie(char *pseudo, int *score, int *niveau)
     fscanf(f, "%s %d %d", pseudo, score, niveau);
     fclose(f);
     return 1;
+}
+// Lit toutes les sauvegardes et les met dans le tableau
+// Retourne le nombre de sauvegardes lues
+int charger_toutes_sauvegardes(Sauvegarde tab[], int max)
+{
+    FILE *f = fopen("sauvegarde.txt", "r");
+    if (f == NULL) return 0;
+
+    int nb = 0;
+    while (nb < max &&
+           fscanf(f, "%s %d %d", tab[nb].pseudo, &tab[nb].score, &tab[nb].niveau) == 3)
+    {
+        nb++;
+    }
+
+    fclose(f);
+    return nb;
+}
+void sauvegarder_partie(const char *pseudo, int score, int niveau)
+{
+    // 1. Charger toutes les sauvegardes existantes
+    Sauvegarde sauvegardes[MAX_SAUVEGARDES];
+    int nb = charger_toutes_sauvegardes(sauvegardes, MAX_SAUVEGARDES);
+
+    // 2. Chercher si le pseudo existe deja
+    int trouve = -1;   // -1 = pas trouve
+    int i;
+    for (i = 0; i < nb; i++)
+    {
+        if (strcmp(sauvegardes[i].pseudo, pseudo) == 0)
+        {
+            trouve = i;
+            break;
+        }
+    }
+
+    if (trouve != -1)
+    {
+        // 3a. Le pseudo existe : on met a jour sa ligne
+        sauvegardes[trouve].score = score;
+        sauvegardes[trouve].niveau = niveau;
+    }
+    else
+    {
+        // 3b. Nouveau pseudo : on l'ajoute a la fin
+        if (nb < MAX_SAUVEGARDES)
+        {
+            strcpy(sauvegardes[nb].pseudo, pseudo);
+            sauvegardes[nb].score = score;
+            sauvegardes[nb].niveau = niveau;
+            nb++;
+        }
+    }
+
+    // 4. Reecrire tout le fichier
+    FILE *f = fopen("sauvegarde.txt", "w");   // "w" ecrase tout
+    if (f == NULL)
+    {
+        allegro_message("Impossible d'ecrire sauvegarde.txt");
+        return;
+    }
+
+    for (i = 0; i < nb; i++)
+    {
+        fprintf(f, "%s %d %d\n",
+                sauvegardes[i].pseudo,
+                sauvegardes[i].score,
+                sauvegardes[i].niveau);
+    }
+
+    fclose(f);
 }
 
 void dessiner_bouton(BITMAP *buffer, Bouton *b)
@@ -107,7 +176,9 @@ int main(void)
     int timer_niveau=0;
     int etat = ETAT_MENU;
     int clic_presse=0;
-    char pseudo[50]="Koyoz";
+    char pseudo[50]="";
+    int dernier_score, dernier_niveau;
+    charger_partie(pseudo, &dernier_score, &dernier_niveau);
     int deja_sauvegarde=0;
 
 
@@ -153,9 +224,17 @@ int main(void)
     strcpy(bouton_jouer.texte, "JOUER");
     bouton_jouer.survol = 0;
 
+    Bouton bouton_reprendre;
+    bouton_reprendre.x = Ecran_X/2 - 100;
+    bouton_reprendre.y = 370;   // entre JOUER et REGLES
+    bouton_reprendre.largeur = 200;
+    bouton_reprendre.hauteur = 50;
+    strcpy(bouton_reprendre.texte, "REPRENDRE");
+    bouton_reprendre.survol = 0;
+
     Bouton bouton_regles;
     bouton_regles.x = Ecran_X/2 - 100;
-    bouton_regles.y = 370;
+    bouton_regles.y = 440;
     bouton_regles.largeur = 200;
     bouton_regles.hauteur = 50;
     strcpy(bouton_regles.texte, "REGLES");
@@ -163,7 +242,7 @@ int main(void)
 
     Bouton bouton_quitter;
     bouton_quitter.x = Ecran_X/2 - 100;
-    bouton_quitter.y = 440;
+    bouton_quitter.y = 510;
     bouton_quitter.largeur = 200;
     bouton_quitter.hauteur = 50;
     strcpy(bouton_quitter.texte, "QUITTER");
@@ -183,12 +262,14 @@ int main(void)
        show_mouse(screen);
         if (key[KEY_TAB])
         {
-            etat = ETAT_JEU;
+
+            etat = ETAT_PSEUDO;
         }
         if (etat == ETAT_MENU)
         {
             // Survol
             bouton_jouer.survol = souris_dans_bouton(&bouton_jouer);
+            bouton_reprendre.survol = souris_dans_bouton(&bouton_reprendre);
             bouton_regles.survol = souris_dans_bouton(&bouton_regles);
             bouton_quitter.survol = souris_dans_bouton(&bouton_quitter);
 
@@ -200,6 +281,7 @@ int main(void)
 
             // Dessin des boutons
             dessiner_bouton(buffer, &bouton_jouer);
+            dessiner_bouton(buffer, &bouton_reprendre);
             dessiner_bouton(buffer, &bouton_regles);
             dessiner_bouton(buffer, &bouton_quitter);
 
@@ -209,7 +291,8 @@ int main(void)
                 clic_presse = 1;
                 if (bouton_jouer.survol)
                 {
-                    etat = ETAT_JEU;
+                    etat = ETAT_PSEUDO;
+                    pseudo[0]='\0';
                     score = 0;
                     niveau = 1;
                     niveau_gagner = 0;
@@ -233,13 +316,111 @@ int main(void)
                     x = 50;
                 }
                 if (bouton_quitter.survol) fin = 1;
-                if (bouton_regles.survol)
+                if (bouton_reprendre.survol)
                 {
-                    etat = ETAT_REGLES;
+                    etat = ETAT_REPRENDRE;
                 }
+
             }
             if (!(mouse_b & 1)) clic_presse = 0;
+            if (key[KEY_ESC]) fin = 1;
+
+
         }
+         else if (etat == ETAT_REPRENDRE)
+{
+    // Charger toutes les sauvegardes (a faire UNE FOIS en arrivant ici)
+    static int charge = 0;
+    static Sauvegarde sauvegardes[10];
+    static int nb_sauvegardes = 0;
+
+    if (!charge)
+    {
+        nb_sauvegardes = charger_toutes_sauvegardes(sauvegardes, 10);
+        charge = 1;
+    }
+
+    // Titre
+    textout_centre_ex(buffer, font, "CHOISIR UNE PARTIE",
+                      Ecran_X/2, 80, makecol(255,255,0), -1);
+
+    // Afficher chaque sauvegarde comme un bouton
+    int j;
+    for (j = 0; j < nb_sauvegardes; j++)
+    {
+        char texte[100];
+        sprintf(texte, "%s - Score: %d - Niveau: %d",
+                sauvegardes[j].pseudo,
+                sauvegardes[j].score,
+                sauvegardes[j].niveau);
+
+        int by = 150 + j * 40;
+        int bx = Ecran_X/2 - 200;
+
+        // Verifier le survol
+        int survol = (mouse_x >= bx && mouse_x <= bx + 400 &&
+                      mouse_y >= by && mouse_y <= by + 30);
+
+        // Couleur selon survol
+        int couleur_fond = survol ? makecol(80,80,180) : makecol(30,30,80);
+        rectfill(buffer, bx, by, bx + 400, by + 30, couleur_fond);
+        rect(buffer, bx, by, bx + 400, by + 30, makecol(255,255,255));
+
+        textout_centre_ex(buffer, font, texte,
+                          Ecran_X/2, by + 10, makecol(255,255,255), -1);
+
+        // Clic = reprendre cette partie
+        if (survol && (mouse_b & 1) && !clic_presse)
+        {
+            clic_presse = 1;
+            strcpy(pseudo, sauvegardes[j].pseudo);
+            score = sauvegardes[j].score;
+            niveau = sauvegardes[j].niveau;
+
+            // Reset jeu
+            niveau_gagner = 0;
+            timer_niveau = 0;
+            deja_sauvegarde = 0;
+            for (i = 0; i < Max_Bulle; i++) bulles[i].actif = 0;
+            for (i = 0; i < Max_Tire; i++) tirs[i].actif = 0;
+
+            // Creer les bulles selon le niveau sauvegarde
+            for (i = 0; i < niveau && i < Max_Bulle; i++)
+            {
+                bulles[i].actif = 1;
+                bulles[i].x = (i + 1) * Ecran_X / (niveau + 1);
+                bulles[i].y = 50;
+                bulles[i].vx = 1.5 + niveau * 0.5;
+                bulles[i].vy = 0;
+                bulles[i].taille = 3;
+                bulles[i].rayon = 50;
+            }
+
+            x = Ecran_X / 2 - tx / 2;
+            etat = ETAT_JEU;
+            charge = 0;   // pour recharger la prochaine fois
+        }
+    }
+
+    // Si pas de sauvegarde
+    if (nb_sauvegardes == 0)
+    {
+        textout_centre_ex(buffer, font, "Aucune sauvegarde trouvee",
+                          Ecran_X/2, 250, makecol(255,100,100), -1);
+    }
+
+    // Bouton retour
+    bouton_retour.survol = souris_dans_bouton(&bouton_retour);
+    dessiner_bouton(buffer, &bouton_retour);
+    if (bouton_retour.survol && (mouse_b & 1) && !clic_presse)
+    {
+        clic_presse = 1;
+        etat = ETAT_MENU;
+        charge = 0;
+    }
+
+    if (!(mouse_b & 1)) clic_presse = 0;
+}
         else if (etat == ETAT_JEU)
         {
             if (key[KEY_LEFT])  x -= px;
@@ -272,7 +453,7 @@ int main(void)
                        bulles[i].x - bulles[i].rayon < x + tx &&    // bulle pas trop a droite
                         bulles[i].y+ bulles[i].rayon> y)           // bulle assez basse
                     {
-                        sauvegarder_partie(pseudo, score, niveau);
+
                         etat=ETAT_GAME_OVER;  // game over
                     }
                     if (bulles[i].x - bulles[i].rayon< 0)
@@ -397,8 +578,8 @@ int main(void)
 
                 if (timer_niveau > 120)
                 {
-                    sauvegarder_partie(pseudo, score, niveau);
                     niveau++;
+                    sauvegarder_partie(pseudo, score, niveau);
 
                     // Nettoyer tout
                     for (i = 0; i < Max_Bulle; i++) bulles[i].actif = 0;
@@ -432,15 +613,83 @@ int main(void)
             sprintf(texte_niveau, "Niveau : %d", niveau);
             textout_ex(buffer, font, texte_niveau, Ecran_X - 120, 10, makecol(255, 255, 255), -1);
         }
+        else if (etat == ETAT_PSEUDO)
+        {
+            // Titre
+            textout_centre_ex(buffer, font, "ENTREZ VOTRE PSEUDO",
+                              Ecran_X/2, 200, makecol(255,255,0), -1);
+
+            // Cadre pour la saisie
+            rect(buffer, Ecran_X/2 - 150, 280, Ecran_X/2 + 150, 320,
+                 makecol(255,255,255));
+
+            // Afficher le pseudo en cours de saisie
+            textout_centre_ex(buffer, font, pseudo,
+                              Ecran_X/2, 295, makecol(255,255,255), -1);
+
+            // Instructions
+            textout_centre_ex(buffer, font, "Tapez votre nom puis appuyez sur ENTREE",
+                              Ecran_X/2, 380, makecol(200,200,200), -1);
+            textout_centre_ex(buffer, font, "(Backspace pour effacer)",
+                              Ecran_X/2, 410, makecol(200,200,200), -1);
+
+            // Lire le clavier
+            if (keypressed())
+            {
+                int touche = readkey();
+                int caractere = touche & 0xFF;
+                int code = touche >> 8;
+
+                if (code == KEY_ENTER)
+                {
+                    // Lancer le jeu si le pseudo n'est pas vide
+                    if (strlen(pseudo) > 0)
+                    {
+                        etat = ETAT_JEU;
+                        sauvegarder_partie(pseudo,0,1);
+                    }
+                }
+                else if (code == KEY_BACKSPACE)
+                {
+                    // Effacer la derniere lettre
+                    int longueur = strlen(pseudo);
+                    if (longueur > 0)
+                    {
+                        pseudo[longueur - 1] = '\0';
+                    }
+                }
+                else if (code == KEY_ESC)
+                {
+                    // Annuler et revenir au menu
+                    etat = ETAT_MENU;
+                }
+                else if (caractere >= 32 && caractere <= 126)
+                {
+                    // Caractere imprimable (lettres, chiffres, espaces, etc.)
+                    int longueur = strlen(pseudo);
+                    if (longueur < 20)   // limiter a 20 caracteres
+                    {
+                        pseudo[longueur] = caractere;
+                        pseudo[longueur + 1] = '\0';
+                    }
+
+                }
+
+            }
+            if ((retrace_count / 30) % 2 == 0)   // clignote toutes les 30 frames
+            {
+                int largeur_pseudo = text_length(font, pseudo);
+                line(buffer,
+                     Ecran_X/2 + largeur_pseudo/2 + 2, 285,
+                     Ecran_X/2 + largeur_pseudo/2 + 2, 315,
+                     makecol(255,255,255));
+            }
+        }
+
 
 
         else if (etat == ETAT_GAME_OVER)
         {
-            if (!deja_sauvegarde)
-            {
-                sauvegarder_partie(pseudo, score, niveau);
-                deja_sauvegarde = 1;
-            }
             // Afficher game over + score
             textout_centre_ex(buffer, font, "GAME OVER",
                               Ecran_X/2, 200, makecol(255,50,50), -1);
@@ -455,6 +704,7 @@ int main(void)
             {
                 etat = ETAT_MENU;
             }
+            if (key[KEY_ESC]) fin = 1;
         }
         else if (etat == ETAT_REGLES)
         {
@@ -492,7 +742,6 @@ int main(void)
             if (!(mouse_b & 1)) clic_presse = 0;
         }
 
-        if (key[KEY_ESC]) fin = 1;
 
 
         scare_mouse();
