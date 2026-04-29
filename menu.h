@@ -17,6 +17,7 @@
 #define MENU_REGLES     3
 #define MENU_QUITTER    4
 
+
 // Resultats specifiques pour l'ecran reprendre
 #define REPRENDRE_RIEN     -2
 #define REPRENDRE_RETOUR   -1
@@ -25,6 +26,9 @@
 // Affiche l'ecran des regles
 // Retourne 1 si le joueur veut revenir au menu, 0 sinon
 int afficher_regles(BITMAP *buffer, Bouton *bouton_retour,
+                    int *clic_presse, int ecran_x);
+
+int afficher_lord(BITMAP *buffer, Bouton *bouton_retour,
                     int *clic_presse, int ecran_x);
 
 // Affiche l'ecran game over

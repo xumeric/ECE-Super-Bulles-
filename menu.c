@@ -48,6 +48,48 @@ int afficher_regles(BITMAP *buffer, Bouton *bouton_retour,
     return retour_au_menu;
 }
 
+int afficher_lord(BITMAP *buffer, Bouton *bouton_retour,
+                    int *clic_presse, int ecran_x )
+{
+    int retour_au_menu = 0;
+
+    // Titre
+    textout_centre_ex(buffer, font, "HISTOIRE DU JEU",
+                      ecran_x/2, 80, makecol(255,255,0), -1);
+
+    // Les regles, ligne par ligne
+    textout_centre_ex(buffer, font, "- Detruisez toutes les bulles pour passer au niveau suivant",
+                      ecran_x/2, 150, makecol(255,255,255), -1);
+    textout_centre_ex(buffer, font, "- Les grosses bulles se divisent en 2 petites",
+                      ecran_x/2, 180, makecol(255,255,255), -1);
+    textout_centre_ex(buffer, font, "- Si une bulle vous touche, c'est perdu !",
+                      ecran_x/2, 210, makecol(255,255,255), -1);
+    textout_centre_ex(buffer, font, "- Utilisez les fleches pour vous deplacer",
+                      ecran_x/2, 260, makecol(200,200,255), -1);
+    textout_centre_ex(buffer, font, "- Maintenez ESPACE pour tirer",
+                      ecran_x/2, 290, makecol(200,200,255), -1);
+    textout_centre_ex(buffer, font, "- Les petites bulles rapportent plus de points !",
+                      ecran_x/2, 320, makecol(200,200,255), -1);
+
+    // Gerer le bouton RETOUR
+    bouton_retour->survol = souris_dans_bouton(bouton_retour);
+    dessiner_bouton(buffer, bouton_retour);
+
+    // Clic sur retour
+    if ((mouse_b & 1) && !(*clic_presse))
+    {
+        *clic_presse = 1;
+        if (bouton_retour->survol)
+        {
+            retour_au_menu = 1;
+        }
+    }
+    if (!(mouse_b & 1)) *clic_presse = 0;
+
+    return retour_au_menu;
+}
+
+
 int afficher_game_over(BITMAP *buffer, int score, int ecran_x)
 {
     textout_centre_ex(buffer, font, "GAME OVER",
@@ -200,6 +242,7 @@ int afficher_menu(BITMAP *buffer,
     bouton_regles->survol = souris_dans_bouton(bouton_regles);
     bouton_quitter->survol = souris_dans_bouton(bouton_quitter);
 
+
     // Titre
     textout_centre_ex(buffer, font, "SUPER BULLES",
                       ecran_x/2, 150, makecol(255,255,0), -1);
@@ -209,6 +252,8 @@ int afficher_menu(BITMAP *buffer,
     dessiner_bouton(buffer, bouton_reprendre);
     dessiner_bouton(buffer, bouton_regles);
     dessiner_bouton(buffer, bouton_quitter);
+
+
 
     // Clics (avec protection anti-maintien)
     if ((mouse_b & 1) && !(*clic_presse))
