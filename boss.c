@@ -11,13 +11,13 @@ void init_boss(Boss *boss, int ecran_x)
     boss->hauteur = 80;
     boss->x = ecran_x / 2 - boss->largeur / 2;
     boss->y = 80;
-    boss->hp = 20;
-    boss->hp_max = 20;
+    boss->hp = 50;
+    boss->hp_max = 50;
     boss->actif = 1;
     boss->timer_teleport = 30;     // teleportations rapides en mode 1
     boss->timer_tir = 90;
     boss->timer_bulle = 300;
-    boss->vx = 3.0;                // vitesse de glissement
+    boss->vx = 4.0;                // vitesse de glissement
     boss->mode = 0;                // commence en mode deplacement
     boss->timer_mode = 240;        // 4 secondes en mode deplacement
 }
@@ -46,7 +46,7 @@ void update_boss(Boss *boss, int ecran_x)
         if (boss->mode == 0)
         {
             // Passe en mode teleportation
-            boss->mode = 240;
+            boss->mode = 1;
             boss->timer_mode = 180;   // 3 secondes en mode teleportation
             boss->timer_teleport = 0;  // teleporte immediatement
         }

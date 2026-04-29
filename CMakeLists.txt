@@ -16,5 +16,10 @@ add_executable(SpaceGame main.c
         boss.h
         boss.c
         powerup.h
-        powerup.c)
+        powerup.c
+        eclair.h
+        eclair.c
+        menu.h
+        menu.c)
 target_link_libraries(SpaceGame -lmingw32 -lalleg44)
+file(COPY ${CMAKE_SOURCE_DIR}/ressources DESTINATION ${CMAKE_BINARY_DIR})

@@ -4,8 +4,7 @@
 
 #ifndef SPACEGAME_POWERUP_H
 #define SPACEGAME_POWERUP_H
-#ifndef POWERUP_H
-#define POWERUP_H
+
 
 #include "entites.h"
 #include <allegro.h>
@@ -34,4 +33,3 @@ int ramasser_powerup(Powerup powerups[], int max,
 
 #endif
 
-#endif //SPACEGAME_POWERUP_H

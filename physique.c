@@ -19,12 +19,12 @@ void rebonds_bulle(Bulle *b, int ecran_x, int ecran_y)
     if (b->y + b->rayon > ecran_y)
     {
         b->y = ecran_y - b->rayon;
-        b->vy = -b->vy * 0.85;
+        b->vy = -b->vy * 0.95;
 
         // Rebond minimum pour eviter que la bulle rampe au sol
         if (b->vy > -2.5 && b->vy < 0)
         {
-            b->vy = -(b->rayon * 0.22 + 3.0);
+            b->vy = -(b->rayon * 0.05 + 3.0);
         }
     }
 

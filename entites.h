@@ -56,4 +56,12 @@ typedef struct {
     int actif;
 } Powerup;
 
+typedef struct {
+    float x;          // position X
+    float y_haut;     // sommet de l'eclair (la bulle)
+    float y_bas;      // bas de l'eclair (descend)
+    int actif;
+    int duree;        // duree avant disparition
+} Eclair;
+
 #endif //SPACEGAME_ENTITES_H
