@@ -6,10 +6,10 @@
 // Retourne le rayon selon la taille (3=grosse, 0=petite)
 int rayon_selon_taille(int taille)
 {
-    if (taille == 3) return 50;
-    if (taille == 2) return 34;
-    if (taille == 1) return 22;
-    return 14;   // taille 0
+    if (taille == 3) return 65;
+    if (taille == 2) return 40;
+    if (taille == 1) return 30;
+    return 20;   // taille 0
 }
 
 // Cree les bulles d'un niveau

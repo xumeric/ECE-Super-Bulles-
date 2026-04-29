@@ -7,8 +7,8 @@
 // Initialise le boss en debut de combat
 void init_boss(Boss *boss, int ecran_x)
 {
-    boss->largeur = 120;
-    boss->hauteur = 80;
+    boss->largeur = 160;
+    boss->hauteur = 160;
     boss->x = ecran_x / 2 - boss->largeur / 2;
     boss->y = 80;
     boss->hp = 50;

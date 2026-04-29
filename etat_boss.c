@@ -132,6 +132,33 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         return nouvel_etat;   // saute le reste de la boucle while
     }
 
+
+    // Update et affichage des e->powerups
+    update_powerups(e->powerups, MAX_POWERUPS, SCREEN_H);
+    afficher_powerups(buffer, e->powerups, MAX_POWERUPS);
+
+    // Ramassage des e->powerups
+    int type_ramasse = ramasser_powerup(e->powerups, MAX_POWERUPS,
+                                        e->joueur.x, e->joueur.y,
+                                        e->joueur.largeur, e->joueur.hauteur);
+    if (type_ramasse != -1)
+    {
+        if (type_ramasse == POWERUP_BOUCLIER)
+        {
+            p->bouclier_actif = 1;
+        }
+        else if (type_ramasse == POWERUP_TIR_DOUBLE)
+        {
+            p->tir_double_timer += 600;   // 10 secondes
+        }
+        else if (type_ramasse == POWERUP_BONUS_TEMPS)
+        {
+            p->score=1000;   // ajoute 1000
+            if (e->boss.actif) e->boss.hp -= 5;
+        }
+    }
+
+
     // Update e->boss
     update_boss(&e->boss, SCREEN_W);
 
@@ -222,6 +249,11 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                         e->bulles[j].x, e->bulles[j].y, e->bulles[j].taille);
                         e->bulles[j].actif = 0;   // pas de division en mode e->boss
                         p->score += 100;
+                        // 20% de chance de creer un powerup
+                        if (rand() % 100 < 20)
+                        {
+                            creer_powerup(e->powerups, MAX_POWERUPS, e->bulles[j].x, e->bulles[j].y);
+                        }
                         break;
                     }
                 }
@@ -269,6 +301,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
 
     // Cooldown du e->joueur
     if (p->tir_cooldown > 0) p->tir_cooldown--;
+    if (p->tir_double_timer > 0) p->tir_double_timer--;
 
     // Tir du e->joueur
     if (key[KEY_SPACE] && p->tir_cooldown == 0)
