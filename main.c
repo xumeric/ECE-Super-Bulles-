@@ -4,20 +4,20 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include "sauvegarde.h"
+#include "sauvegarde/sauvegarde.h"
 #include "entites.h"
-#include "graphique.h"
-#include "physique.h"
-#include "jeu.h"
-#include "boss.h"
-#include "powerup.h"
-#include "eclair.h"
-#include "menu.h"
-#include "assets.h"
-#include "partie.h"
+#include "graphique/graphique.h"
+#include "physique/physique.h"
+#include "jeu/jeu.h"
+#include "boss/boss.h"
+#include "powerup/powerup.h"
+#include "eclair/eclair.h"
+#include "menu/menu.h"
+#include "assets/assets.h"
+#include "partie/partie.h"
 #include "constantes.h"
-#include "etat_boss.h"
-#include "etat_jeu.h"
+#include "etat_boss/etat_boss.h"
+#include "etat_jeu/etat_jeu.h"
 
 
 #define ERREUR(msg){\
@@ -36,7 +36,9 @@ int main(void)
     int couleur;
     int etat = ETAT_MENU;
     int clic_presse = 0;
-    float Gravite = 0.15;
+    float Gravite = 0.25;
+    int anim_menu_compteur = 0;
+    int anim_menu_frame = 0;
 
     Partie partie;
     Entites entites;
@@ -49,8 +51,9 @@ int main(void)
     allegro_init();
     install_keyboard();
     install_mouse();
-    show_mouse(screen);
     set_color_depth(32);
+    show_mouse(screen);
+    install_sound(DIGI_AUTODETECT, MIDI_AUTODETECT, NULL);
     srand(time(NULL));
     if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, Ecran_X, Ecran_Y, 0, 0) != 0)
         ERREUR(allegro_error);
@@ -63,12 +66,20 @@ int main(void)
     entites.joueur.vitesse = 15;
     couleur = makecol(255, 100, 10);
 
-    // Note : init_entites() a deja desactive toutes les entites
+
     int i;
 
     BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
 
     Assets assets = charger_assets();
+    SAMPLE *musique =load_sample("ressources/musique_menu.wav");
+    if (musique == NULL)
+    {
+        allegro_message("Impossible de charger ressources/musique.wav");
+    }
+
+        play_sample(musique,200,128,1000,1);
+
 
 
     // Initialisation des boutons
@@ -112,21 +123,41 @@ int main(void)
     strcpy(bouton_retour.texte, "RETOUR");
     bouton_retour.survol = 0;
 
-    Bouton bouton_lord;
-    bouton_lord.x = SCREEN_W/2 - 100;
-    bouton_lord.y = 640;
-    bouton_lord.largeur = 200;
-    bouton_lord.hauteur = 50;
-    strcpy(bouton_lord.texte, "LORD");
-    bouton_lord.survol = 0;
+    // Boutons du menu pause
+    Bouton bouton_pause_reprendre = {
+        SCREEN_W / 2 - 100, SCREEN_H / 2 - 60,
+        200, 50, "REPRENDRE", 0
+    };
+    Bouton bouton_pause_menu = {
+        SCREEN_W / 2 - 100, SCREEN_H / 2 + 10,
+        200, 50, "MENU PRINCIPAL", 0
+    };
+    Bouton bouton_pause_quitter = {
+        SCREEN_W / 2 - 100, SCREEN_H / 2 + 80,
+        200, 50, "QUITTER", 0
+    };
 
+show_mouse(screen);
     while (!fin)
     {
-        clear(buffer);
-        show_mouse(screen);
+        if (etat != ETAT_PAUSE)
+        {
+            clear(buffer);
+        }
+
 
         if (etat == ETAT_MENU)
         {
+            // menu d'acceuil
+            blit(assets.menu_fond, buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
+
+            anim_menu_compteur++;
+            if (anim_menu_compteur >= DUREE_FRAME_MENU)
+            {
+                anim_menu_compteur = 0;
+                anim_menu_frame = (anim_menu_frame + 1) % 10;
+            }
+
             int choix = afficher_menu(buffer,
                                       &bouton_jouer, &bouton_reprendre,
                                       &bouton_regles, &bouton_quitter,
@@ -239,6 +270,29 @@ int main(void)
             etat = gerer_etat_boss(buffer, &assets, &partie, &entites, &animations,
                                    couleur, Gravite, &fin);
         }
+        else if (etat == ETAT_PAUSE)
+        {
+            int choix = afficher_pause(buffer,
+                                        &bouton_pause_reprendre,
+                                        &bouton_pause_menu,
+                                        &bouton_pause_quitter,
+                                        &clic_presse,
+                                        SCREEN_W, SCREEN_H);
+
+            if (choix == 1)         // REPRENDRE
+            {
+                etat = partie.etat_avant_pause;
+            }
+            else if (choix == 2)    // MENU PRINCIPAL
+            {
+                sauvegarder_partie(partie.pseudo, partie.score, partie.niveau);
+                etat = ETAT_MENU;
+            }
+            else if (choix == 3)    // QUITTER
+            {
+                fin = 1;
+            }
+        }
         else if (etat == ETAT_GAME_OVER)
         {
             int resultat = afficher_game_over(buffer, partie.score, SCREEN_W);
@@ -258,7 +312,6 @@ int main(void)
                 etat = ETAT_MENU;
             }
         }
-
         scare_mouse();
         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
         unscare_mouse();
@@ -267,6 +320,7 @@ int main(void)
     // Liberer la memoire allouee dynamiquement
     liberer_entites(&entites);
     liberer_assets(&assets);
+    destroy_sample(musique);
 
 
 

@@ -4,8 +4,8 @@
 #include <allegro.h>
 #include <stdio.h>
 #include <string.h>
-#include "menu.h"
-#include "graphique.h"
+#include "menu/menu.h"
+#include "graphique/graphique.h"
 
 int afficher_regles(BITMAP *buffer, Bouton *bouton_retour,
                     int *clic_presse, int ecran_x)
@@ -244,7 +244,7 @@ int afficher_menu(BITMAP *buffer,
 
 
     // Titre
-    textout_centre_ex(buffer, font, "SUPER BULLES",
+    textout_centre_ex(buffer, font, "SPACE PANG",
                       ecran_x/2, 150, makecol(255,255,0), -1);
 
     // Dessin des boutons
@@ -335,4 +335,58 @@ int afficher_reprendre(BITMAP *buffer,
     if (!(mouse_b & 1)) *clic_presse = 0;
 
     return resultat;
+}
+
+int afficher_pause(BITMAP *buffer, Bouton *bouton_reprendre,
+                   Bouton *bouton_menu, Bouton *bouton_quitter,
+                   int *clic_presse, int ecran_x, int ecran_y)
+{
+    int retour = 0;
+
+
+    // 1. Overlay semi-transparent simulé avec pattern de pixels
+    int px, py;
+    int noir = makecol(0, 0, 0);
+    for (py = 0; py < ecran_y; py += 2)
+    {
+        for (px = (py % 4 == 0) ? 0 : 1; px < ecran_x; px += 2)
+        {
+            putpixel(buffer, px, py, noir);
+        }
+    }
+    int cadre_largeur = 400;
+    int cadre_hauteur = 350;
+    int cadre_x = ecran_x / 2 - cadre_largeur / 2;
+    int cadre_y = ecran_y / 2 - cadre_hauteur / 2;
+
+    rectfill(buffer, cadre_x, cadre_y,
+             cadre_x + cadre_largeur, cadre_y + cadre_hauteur,
+             makecol(30, 30, 60));
+    rect(buffer, cadre_x, cadre_y,
+         cadre_x + cadre_largeur, cadre_y + cadre_hauteur,
+         makecol(255, 255, 255));
+
+    textout_centre_ex(buffer, font, "PAUSE",
+                      ecran_x / 2, cadre_y + 40,
+                      makecol(255, 255, 0), -1);
+
+    bouton_reprendre->survol = souris_dans_bouton(bouton_reprendre);
+    bouton_menu->survol      = souris_dans_bouton(bouton_menu);
+    bouton_quitter->survol   = souris_dans_bouton(bouton_quitter);
+
+    dessiner_bouton(buffer, bouton_reprendre);
+    dessiner_bouton(buffer, bouton_menu);
+    dessiner_bouton(buffer, bouton_quitter);
+
+    // Détection du clic (avec anti-maintien)
+    if ((mouse_b & 1) && !(*clic_presse))
+    {
+        *clic_presse = 1;
+        if (bouton_reprendre->survol) retour = 1;
+        else if (bouton_menu->survol)  retour = 2;
+        else if (bouton_quitter->survol) retour = 3;
+    }
+    if (!(mouse_b & 1)) *clic_presse = 0;
+
+    return retour;
 }
