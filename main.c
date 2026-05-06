@@ -98,7 +98,7 @@ int main(void)
     bouton_reprendre.hauteur = 50;
     strcpy(bouton_reprendre.texte, "REPRENDRE");
     bouton_reprendre.survol = 0;
-
+// bonjour
     Bouton bouton_regles;
     bouton_regles.x = SCREEN_W/2 - 100;
     bouton_regles.y = 440;
