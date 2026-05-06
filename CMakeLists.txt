@@ -22,4 +22,8 @@ add_executable(SpaceGame main.c
 
 target_include_directories(SpaceGame PRIVATE sauvegarde graphique physique jeu boss powerup eclair assets partie etat_jeu etat_boss)
 target_link_libraries(SpaceGame -lmingw32 -lalleg44)
+
+MESSAGE(STATUS "Copie des ressources")
 file(COPY ${CMAKE_SOURCE_DIR}/ressources DESTINATION ${CMAKE_BINARY_DIR})
+
+MESSAGE(STATUS "Initialisation de SpaceGame - done")

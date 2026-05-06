@@ -72,10 +72,10 @@ int main(void)
     BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
 
     Assets assets = charger_assets();
-    SAMPLE *musique =load_sample("ressources/musique_menu.wav");
+    SAMPLE *musique =load_sample("ressources/musique_fond.wav");
     if (musique == NULL)
     {
-        allegro_message("Impossible de charger ressources/musique.wav");
+        allegro_message("Impossible de charger ressources/musique_fond.wav");
     }
 
         play_sample(musique,200,128,1000,1);
