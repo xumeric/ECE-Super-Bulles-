@@ -72,13 +72,17 @@ int main(void)
     BITMAP *buffer = create_bitmap(SCREEN_W, SCREEN_H);
 
     Assets assets = charger_assets();
-    SAMPLE *musique =load_sample("ressources/musique_fond.wav");
-    if (musique == NULL)
+    SAMPLE *musique_fond     =load_sample("ressources/musique_fond.wav");
+    SAMPLE *musique_jeu      = load_sample("ressources/musique_jeu.wav");
+    SAMPLE *musique_boss     = load_sample("ressources/musique_boss.wav");
+    SAMPLE *musique_victoire = load_sample("ressources/musique_victoire.wav");
+
+    if (!musique_fond || !musique_jeu || !musique_boss || !musique_victoire)
     {
-        allegro_message("Impossible de charger ressources/musique_fond.wav");
+        allegro_message("Probleme de chargement des musiques");
     }
 
-        play_sample(musique,200,128,1000,1);
+    SAMPLE *musique_actuelle = NULL;
 
 
 
@@ -140,6 +144,24 @@ int main(void)
 show_mouse(screen);
     while (!fin)
     {
+        SAMPLE *musique_voulue = NULL;
+        if (etat == ETAT_MENU || etat == ETAT_PSEUDO ||
+            etat == ETAT_REPRENDRE || etat == ETAT_REGLES)
+            musique_voulue = musique_fond;
+        else if (etat == ETAT_JEU || etat == ETAT_PAUSE)
+            musique_voulue = musique_jeu;
+        else if (etat == ETAT_BOSS)
+            musique_voulue = musique_boss;
+        else if (etat == ETAT_VICTOIRE)
+            musique_voulue = musique_victoire;
+        // ETAT_GAME_OVER : pas de musique (silence)
+
+        if (musique_voulue != musique_actuelle)
+        {
+            if (musique_actuelle != NULL) stop_sample(musique_actuelle);
+            if (musique_voulue != NULL)   play_sample(musique_voulue, 150, 128, 1000, 1);
+            musique_actuelle = musique_voulue;
+        }
         if (etat != ETAT_PAUSE)
         {
             clear(buffer);
@@ -320,7 +342,10 @@ show_mouse(screen);
     // Liberer la memoire allouee dynamiquement
     liberer_entites(&entites);
     liberer_assets(&assets);
-    destroy_sample(musique);
+    destroy_sample(musique_fond);
+    destroy_sample(musique_jeu);
+    destroy_sample(musique_boss);
+    destroy_sample(musique_victoire);
 
 
 
