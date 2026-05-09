@@ -15,7 +15,7 @@ void deplacer_bulle(Bulle *b, float gravite)
 // Rebonds sur les murs et le sol
 void rebonds_bulle(Bulle *b, int ecran_x, int ecran_y)
 {
-    // Rebond au sol
+
     if (b->y + b->rayon > ecran_y)
     {
         b->y = ecran_y - b->rayon;
@@ -43,7 +43,6 @@ void rebonds_bulle(Bulle *b, int ecran_x, int ecran_y)
     }
 }
 
-// Collision entre une bulle (cercle) et le joueur (rectangle)
 int collision_bulle_joueur(Bulle *b, int joueur_x, int joueur_y,
                            int joueur_largeur, int joueur_hauteur)
 {

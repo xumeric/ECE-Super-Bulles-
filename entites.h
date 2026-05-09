@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     float x, y;
     int actif;
+    float vx;
 } Tir;
 
 typedef struct {
@@ -47,6 +48,9 @@ typedef struct {
     float vx;              // vitesse horizontale
     int mode;              // 0 = deplacement, 1 = teleportation
     int timer_mode;        // duree restante dans le mode actuel
+    int phase;              // 1, 2 ou 3
+    int timer_transition;   // pour l'effet flash de transition
+    int timer_laser;        // cooldown des lasers (phase 2+)
 } Boss;
 
 typedef struct {
@@ -63,5 +67,12 @@ typedef struct {
     int actif;
     int duree;        // duree avant disparition
 } Eclair;
+
+typedef struct {
+    int actif;
+    float x;             // position X (le laser est vertical)
+    int etat;            // 0 = warning (rouge), 1 = strike (sprite)
+    int timer;           // décompte du timer de l'état actuel
+} Laser;
 
 #endif //SPACEGAME_ENTITES_H

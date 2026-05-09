@@ -1,18 +1,3 @@
-//
-// Created by xumer on 29/04/2026.
-//
-
-//
-// partie.c - Initialisation des structures de jeu
-//
-
-//
-// partie.c - Initialisation des structures + helpers
-//
-
-//
-// partie.c - Initialisation des structures + helpers
-//
 
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +32,7 @@ void init_entites(Entites *e, int taille_bulles_max)
     e->powerups         = malloc(MAX_POWERUPS * sizeof(Powerup));
     e->eclairs          = malloc(MAX_ECLAIRS * sizeof(Eclair));
     e->projectiles_boss = malloc(MAX_PROJ_BOSS * sizeof(Tir));
+    e->lasers = malloc(MAX_LASERS * sizeof(Laser));
 
     for (i = 0; i < taille_bulles_max; i++) e->bulles[i].actif = 0;
     for (i = 0; i < MAX_TIRS; i++)         e->tirs[i].actif = 0;
@@ -54,6 +40,7 @@ void init_entites(Entites *e, int taille_bulles_max)
     for (i = 0; i < MAX_ECLAIRS; i++)      e->eclairs[i].actif = 0;
     for (i = 0; i < MAX_PROJ_BOSS; i++)    e->projectiles_boss[i].actif = 0;
     for (i = 0; i < MAX_EXPLOSIONS; i++)   e->explosions[i].actif = 0;
+    for (i = 0; i < MAX_LASERS; i++) e->lasers[i].actif = 0;
 
     e->boss.actif = 0;
 }
@@ -65,6 +52,7 @@ void liberer_entites(Entites *e)
     free(e->powerups);
     free(e->eclairs);
     free(e->projectiles_boss);
+    free(e->lasers);
 }
 
 void init_animations(Animations *a)
@@ -89,7 +77,7 @@ Bulle *reallouer_bulles(Bulle *bulles, int *taille_actuelle, int nouveau_niveau)
     Bulle *nouveau = realloc(bulles, nouvelle_taille * sizeof(Bulle));
     if (nouveau == NULL)
     {
-        return bulles;   // echec : on garde l'ancien
+        return bulles;
     }
 
     int i;

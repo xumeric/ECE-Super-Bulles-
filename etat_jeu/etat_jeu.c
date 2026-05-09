@@ -1,13 +1,3 @@
-//
-// Created by xumer on 29/04/2026.
-//
-//
-// etat_jeu.c - Gestion de l'etat ETAT_JEU (gameplay normal)
-//
-
-//
-// etat_jeu.c - Gestion de l'etat ETAT_JEU (gameplay normal)
-//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,14 +17,14 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
                    Partie *p, Entites *e, Animations *a,
                    int couleur, float gravite, int *fin)
 {
-    int nouvel_etat = ETAT_JEU;   // par defaut, on reste dans cet etat
+    int nouvel_etat = ETAT_JEU;
 
-    // Afficher le fond du p->niveau (recouvre le clear noir)
+    // Afficher le fond
     blit(assets->fonds[p->niveau - 1], buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
-    // Mise a jour direction et etat de marche
-    a->joueur_en_marche = 0;  // par defaut, immobile
-    // Deplacement du e->joueur
+
+    a->joueur_en_marche = 0;
+
     if (key[KEY_LEFT])
     {
         e->joueur.x -= e->joueur.vitesse;
@@ -47,7 +37,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         a->joueur_direction = 1;
         a->joueur_en_marche = 1;
     }
-    // Avancer l'animation de marche
+
     if (a->joueur_en_marche)
     {
         a->anim_joueur_compteur++;
@@ -59,7 +49,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     }
     else
     {
-        a->anim_joueur_frame = 0;  // reset quand on s'arrete
+        a->anim_joueur_frame = 0;
     }
 
     if (key[KEY_ESC] || key[KEY_P])
@@ -71,14 +61,13 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     if (e->joueur.x < 0) e->joueur.x = 0;
     if (e->joueur.x > SCREEN_W - e->joueur.largeur) e->joueur.x = SCREEN_W - e->joueur.largeur;
 
-    // Pendant le decompte initial : afficher le chiffre et sauter la logique
+
     if (p->decompte_initial > 0)
     {
-        // Afficher le e->joueur (deja affiche au-dessus)
-        // Choisir le bon sprite (idle ou frame de course)
+
         BITMAP *sprite_joueur = a->joueur_en_marche ? assets->joueur_run[a->anim_joueur_frame] : assets->joueur_idle;
 
-        // Calcul position : centrer horizontalement, aligner par le bas avec la hitbox
+        // Calcul position
         int sx = e->joueur.x + e->joueur.largeur / 2 - sprite_joueur->w / 2;
         int sy = e->joueur.y + e->joueur.hauteur - sprite_joueur->h;
 
@@ -87,21 +76,21 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         else
             draw_sprite_h_flip(buffer, sprite_joueur, sx, sy);
 
-        // Afficher les e->bulles SANS les bouger
+
         int b;
         for (b = 0; b < p->taille_bulles_actuelle; b++)
         {
             if (e->bulles[b].actif)
             {
-                // e->bulles[b].taille va de 0 (plus gros) a 3 (plus petit)
+
                 BITMAP *sprite = assets->asteroides[e->bulles[b].taille];
                 draw_sprite(buffer, sprite,
                             e->bulles[b].x - sprite->w / 2,
                             e->bulles[b].y - sprite->h / 2);
             }
         }
-        // Calculer quel chiffre afficher
-        int chiffre = (p->decompte_initial / 60);   // 240->4, 180->3, 120->2, 60->1
+
+        int chiffre = (p->decompte_initial / 60);
         char texte_chiffre[10];
 
         if (chiffre == 3)
@@ -113,25 +102,23 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         else
             strcpy(texte_chiffre, "GO !");
 
-        // Afficher le chiffre en GROS au centre
+
         textout_centre_ex(buffer, font, texte_chiffre,
                           SCREEN_W / 2, SCREEN_H / 2,
                           makecol(255, 255, 0), -1);
 
         p->decompte_initial--;
 
-        return nouvel_etat;// saute le reste de la boucle while
+        return nouvel_etat;
     }
 
 
-    // Affichage e->joueur (couleur normale ou rouge si tir double)
-    int couleur_joueur = couleur;
-    if (p->tir_double_timer > 0) couleur_joueur = makecol(255, 50, 50);
 
-    // Choisir le bon sprite (idle ou frame de course)
+
+    // Choisir le bon sprite
     BITMAP *sprite_joueur = a->joueur_en_marche ? assets->joueur_run[a->anim_joueur_frame] : assets->joueur_idle;
 
-    // Calcul position : centrer horizontalement, aligner par le bas avec la hitbox
+    // Calcul position
     int sx = e->joueur.x + e->joueur.largeur / 2 - sprite_joueur->w / 2;
     int sy = e->joueur.y + e->joueur.hauteur - sprite_joueur->h;
 
@@ -140,7 +127,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     else
         draw_sprite_h_flip(buffer, sprite_joueur, sx, sy);
 
-    // Affichage bouclier autour du e->joueur
+
     if (p->bouclier_actif)
     {
         circle(buffer, e->joueur.x + e->joueur.largeur/2, e->joueur.y + e->joueur.hauteur/2,
@@ -149,7 +136,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
                38, makecol(100, 180, 255));
     }
 
-    // Bulles : physique + affichage + collision e->joueur
+    // Bulles
     int i;
     for (i = 0; i < p->taille_bulles_actuelle; i++)
     {
@@ -172,7 +159,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
                     nouvel_etat = ETAT_GAME_OVER;
                 }
             }
-            // e->bulles[i].taille va de 0 (plus gros) a 3 (plus petit)
+
             BITMAP *sprite = assets->asteroides[e->bulles[i].taille];
             draw_sprite(buffer, sprite,
                         e->bulles[i].x - sprite->w / 2,
@@ -180,13 +167,12 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // === MISE A JOUR ET AFFICHAGE DES EXPLOSIONS ===
     int ex;
     for (ex = 0; ex < MAX_EXPLOSIONS; ex++)
     {
         if (e->explosions[ex].actif)
         {
-            // Dessiner la frame actuelle
+
             BITMAP *frame_sprite = assets->explosions_frames[e->explosions[ex].taille][e->explosions[ex].frame];
             draw_sprite(buffer, frame_sprite,
                         e->explosions[ex].x - frame_sprite->w / 2,
@@ -200,7 +186,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
                 e->explosions[ex].frame++;
                 if (e->explosions[ex].frame >= 5)
                 {
-                    e->explosions[ex].actif = 0;  // animation terminee
+                    e->explosions[ex].actif = 0;
                 }
             }
         }
@@ -223,15 +209,14 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
         else if (type_ramasse == POWERUP_TIR_DOUBLE)
         {
-            p->tir_double_timer += 600;   // 10 secondes
+            p->tir_double_timer += 600;
         }
         else if (type_ramasse == POWERUP_BONUS_TEMPS)
         {
-            p->temps_restant += 20 * 60;   // +20 secondes
+            p->temps_restant += 20 * 60;
         }
     }
 
-    // Eclairs aleatoires des e->bulles a partir du p->niveau 3
     if (p->niveau >= 3)
     {
         for (i = 0; i < p->taille_bulles_actuelle; i++)
@@ -246,11 +231,11 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Update et affichage des e->eclairs
+    // Update et affichage des eclairs
     update_eclairs(e->eclairs, MAX_ECLAIRS, SCREEN_H);
     afficher_eclairs(buffer, e->eclairs, MAX_ECLAIRS);
 
-    // Collision eclair/e->joueur
+    // Collision eclair à joueur
     for (i = 0; i < MAX_ECLAIRS; i++)
     {
         if (e->eclairs[i].actif)
@@ -272,16 +257,14 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Cooldowns
+
     if (p->tir_cooldown > 0) p->tir_cooldown--;
     if (p->tir_double_timer > 0) p->tir_double_timer--;
 
-    // Auto-tir
     if (key[KEY_SPACE] && p->tir_cooldown == 0)
     {
         if (p->tir_double_timer > 0)
         {
-            // TIR DOUBLE : 2 balles espacees
             int balles_creees = 0;
             for (i = 0; i < MAX_TIRS && balles_creees < 2; i++)
             {
@@ -290,6 +273,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
                     e->tirs[i].actif = 1;
                     e->tirs[i].x = e->joueur.x + e->joueur.largeur / 2 + (balles_creees == 0 ? -10 : 10);
                     e->tirs[i].y = e->joueur.y;
+                    e->tirs[i].vx = 0;
                     balles_creees++;
                 }
             }
@@ -297,7 +281,6 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
         else
         {
-            // TIR NORMAL : 1 balle
             for (i = 0; i < MAX_TIRS; i++)
             {
                 if (!e->tirs[i].actif)
@@ -312,7 +295,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Tirs : deplacement + collision avec e->bulles
+    // Tir
     for (i = 0; i < MAX_TIRS; i++)
     {
         if (e->tirs[i].actif)
@@ -371,12 +354,12 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         if (p->timer_niveau > 120)
         {
             p->niveau++;
-            p->decompte_initial = 240;   // 4 secondes de decompte
+            p->decompte_initial = 240;
             sauvegarder_partie(p->pseudo, p->score, p->niveau);
 
             for (i = 0; i < MAX_TIRS; i++) e->tirs[i].actif = 0;
 
-            // Si on arrive au p->niveau 6, on passe au e->boss
+            // Si on arrive au niveau 6, on passe au boss
             if (p->niveau == 6)
             {
                 init_boss(&e->boss, SCREEN_W);
@@ -399,19 +382,18 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Decrementation du timer
+
     if (!p->niveau_gagner && p->temps_restant > 0)
     {
         p->temps_restant--;
 
-        // Temps epuise = game over
         if (p->temps_restant == 0)
         {
             nouvel_etat = ETAT_GAME_OVER;
         }
     }
 
-    // Affichage p->score, p->niveau, timer
+
     char texte_score[50];
     sprintf(texte_score, "Score : %d", p->score);
     textout_ex(buffer, font, texte_score, 10, 10, makecol(255, 255, 255), -1);
@@ -420,7 +402,6 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     sprintf(texte_niveau, "Niveau : %d", p->niveau);
     textout_ex(buffer, font, texte_niveau, SCREEN_W - 120, 10, makecol(255, 255, 255), -1);
 
-    // Timer avec couleur changeante
     int secondes = p->temps_restant / 60;
     char texte_temps[30];
     sprintf(texte_temps, "Temps : %d", secondes);
@@ -432,7 +413,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
 
     textout_ex(buffer, font, texte_temps, SCREEN_W / 2 - 40, 10, couleur_temps, -1);
 
-    // HUD des effets actifs (en bas a droite)
+
     int hud_y = SCREEN_H - 50;
 
     if (p->bouclier_actif)
@@ -457,7 +438,7 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     }
     if (key[KEY_F1])
     {
-        // Vider toutes les e->bulles pour declencher la victoire du p->niveau
+
         int k;
         for (k = 0; k < p->taille_bulles_actuelle; k++)
             e->bulles[k].actif = 0;
@@ -468,6 +449,10 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
         int k;
         for (k = 0; k < p->taille_bulles_actuelle; k++)
             e->bulles[k].actif = 0;
+    }
+    if (key[KEY_F3])
+    {
+        nouvel_etat = ETAT_BONUS;
     }
 
     return nouvel_etat;

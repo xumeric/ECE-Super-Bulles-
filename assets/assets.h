@@ -37,6 +37,8 @@ typedef struct {
     SAMPLE *musique_boss;
     SAMPLE *musique_victoire;
 
+    BITMAP *sprite_laser;
+
 } Assets;
 
 Assets charger_assets(void);

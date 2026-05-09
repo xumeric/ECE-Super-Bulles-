@@ -1,9 +1,7 @@
-//
-// Created by xumer on 21/04/2026.
-//
+
 #include "../jeu/jeu.h"
 
-// Retourne le rayon selon la taille (3=grosse, 0=petite)
+// Retourne le rayon selon la taille
 int rayon_selon_taille(int taille)
 {
     if (taille == 3) return 65;
@@ -17,7 +15,6 @@ void creer_bulles_niveau(Bulle bulles[], int max, int niveau, int ecran_x)
 {
     int i;
 
-    // D'abord, desactiver toutes les bulles
     for (i = 0; i < max; i++)
     {
         bulles[i].actif = 0;
@@ -36,17 +33,14 @@ void creer_bulles_niveau(Bulle bulles[], int max, int niveau, int ecran_x)
     }
 }
 
-// Divise une bulle en 2 plus petites
 void diviser_bulle(Bulle bulles[], int max, int index_bulle)
 {
-    // Si taille 0, pas de division possible
     if (bulles[index_bulle].taille <= 0) return;
 
     int nouvelle_taille = bulles[index_bulle].taille - 1;
     float x_parent = bulles[index_bulle].x;
     float y_parent = bulles[index_bulle].y;
 
-    // Chercher 2 slots libres
     int crees = 0;
     int k;
     for (k = 0; k < max && crees < 2; k++)
@@ -65,7 +59,6 @@ void diviser_bulle(Bulle bulles[], int max, int index_bulle)
     }
 }
 
-// Compte les bulles actives
 int compter_bulles_actives(Bulle bulles[], int max)
 {
     int nb = 0;

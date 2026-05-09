@@ -17,8 +17,9 @@ add_executable(SpaceGame main.c
         partie/partie.c
         etat_jeu/etat_jeu.c
         etat_boss/etat_boss.c
-        constantes.h
-)
+        etat_bonus/etat_bonus.h
+        etat_bonus/etat_bonus.c
+        constantes.h)
 
 target_include_directories(SpaceGame PRIVATE sauvegarde graphique physique jeu boss powerup eclair assets partie etat_jeu etat_boss)
 target_link_libraries(SpaceGame -lmingw32 -lalleg44)

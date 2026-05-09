@@ -78,6 +78,8 @@ Assets charger_assets(void) {
 
     a.musique_menu = load_sample("ressources/musique_fond.wav");
 
+    a.sprite_laser = charger_un_sprite("ressources/eclair_long.bmp");
+
     return a;
 }
 
@@ -101,4 +103,6 @@ void liberer_assets(Assets *a) {
     for (i = 0; i < 10; i++) destroy_bitmap(a->menu_fond);
 
     destroy_sample(a->musique_menu);
+
+    destroy_bitmap(a->sprite_laser);
 }

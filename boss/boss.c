@@ -19,6 +19,9 @@ void init_boss(Boss *boss, int ecran_x)
     boss->vx = 4.0;                // vitesse de glissement
     boss->mode = 0;
     boss->timer_mode = 240;
+    boss->phase = 1;
+    boss->timer_transition = 0;
+    boss->timer_laser = 0;
 }
 
 // Teleporte le boss a une position X aleatoire
@@ -30,6 +33,22 @@ void teleporter_boss(Boss *boss, int ecran_x)
 
 void update_boss(Boss *boss, int ecran_x)
 {
+
+    if (boss->phase == 1 && boss->hp <= 35)
+    {
+        boss->phase = 2;
+        boss->timer_transition = 60;   // 1 seconde de flash
+    }
+    else if (boss->phase == 2 && boss->hp <= 15)
+    {
+        boss->phase = 3;
+        boss->timer_transition = 60;
+    }
+
+    // Décrémenter les timers
+    if (boss->timer_transition > 0) boss->timer_transition--;
+    if (boss->timer_laser > 0)      boss->timer_laser--;
+
     if (!boss->actif) return;
 
     if (boss->timer_mode > 0)
@@ -116,6 +135,7 @@ int boss_tirer(Boss *boss, Tir projectiles[], int max)
             projectiles[i].actif = 1;
             projectiles[i].x = boss->x + boss->largeur / 2;
             projectiles[i].y = boss->y + boss->hauteur;
+            projectiles[i].vx = 0;
             return 1;
         }
     }

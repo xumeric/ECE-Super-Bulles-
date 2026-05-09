@@ -1,6 +1,4 @@
-//
-// Created by xumer on 27/04/2026.
-//
+
 
 #include <stdlib.h>
 #include <allegro.h>
@@ -18,14 +16,14 @@ int creer_eclair(Eclair eclairs[], int max, float x_bulle, float y_bulle)
             eclairs[i].x = x_bulle;
             eclairs[i].y_haut = y_bulle;
             eclairs[i].y_bas = y_bulle;
-            eclairs[i].duree = 60;        // 1 seconde
+            eclairs[i].duree = 60;
             return 1;
         }
     }
     return 0;
 }
 
-// Met a jour les eclairs : ils s'allongent vers le bas puis disparaissent
+// Met a jour les eclairs
 void update_eclairs(Eclair eclairs[], int max, int ecran_y)
 {
     int i;
@@ -57,7 +55,7 @@ void afficher_eclairs(BITMAP *buffer, Eclair eclairs[], int max)
     {
         if (eclairs[i].actif)
         {
-            // Zigzag : on dessine plusieurs petits segments alternes
+            // Zigzag
             float y = eclairs[i].y_haut;
             float x = eclairs[i].x;
             int cote = 0;   // cote actuel du zigzag
@@ -82,7 +80,7 @@ void afficher_eclairs(BITMAP *buffer, Eclair eclairs[], int max)
     }
 }
 
-// Collision eclair/joueur
+// Collision
 int collision_eclair_joueur(Eclair *e, int joueur_x, int joueur_y,
                              int joueur_largeur, int joueur_hauteur)
 {

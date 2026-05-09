@@ -19,6 +19,7 @@
 #define ETAT_BOSS       6
 #define ETAT_VICTOIRE   7
 #define ETAT_PAUSE      8
+#define ETAT_BONUS      9
 
 // DIMENSIONS DE L'ECRAN
 
@@ -32,6 +33,7 @@
 #define MAX_PROJ_BOSS   20     // projectiles du boss
 #define MAX_BULLES      100    // taille max du tableau de bulles
 #define MAX_EXPLOSIONS  32     // explosions affichees simultanement
+#define MAX_LASERS  5    // lasers simultanés du boss
 
 
 // DUREES D'ANIMATION

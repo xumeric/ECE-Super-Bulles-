@@ -1,11 +1,9 @@
-//
-// Created by xumer on 26/04/2026.
-//
+
 #include <stdlib.h>
 #include <allegro.h>
 #include "../powerup/powerup.h"
 
-// Initialise tous les powerups
+
 void init_powerups(Powerup powerups[], int max)
 {
     int i;
@@ -34,7 +32,7 @@ int creer_powerup(Powerup powerups[], int max, float x, float y)
     return 0;
 }
 
-// Met a jour les powerups (gravite + chute)
+// Met a jour les powerups
 void update_powerups(Powerup powerups[], int max, int ecran_y)
 {
     int i;
@@ -42,7 +40,7 @@ void update_powerups(Powerup powerups[], int max, int ecran_y)
     {
         if (powerups[i].actif)
         {
-            powerups[i].vy += 0.15;   // meme gravite que les bulles
+            powerups[i].vy += 0.15;
             powerups[i].y += powerups[i].vy;
 
             // Sortir de l'ecran = desactiver
@@ -54,7 +52,7 @@ void update_powerups(Powerup powerups[], int max, int ecran_y)
     }
 }
 
-// Affiche les powerups (carre colore avec lettre)
+// Affiche les powerups
 void afficher_powerups(BITMAP *buffer, Powerup powerups[], int max)
 {
     int i;
@@ -65,7 +63,7 @@ void afficher_powerups(BITMAP *buffer, Powerup powerups[], int max)
             int couleur;
             char lettre[2] = " ";
 
-            // Couleur et lettre selon le type
+
             if (powerups[i].type == POWERUP_BOUCLIER)
             {
                 couleur = makecol(50, 150, 255);    // bleu
@@ -82,7 +80,6 @@ void afficher_powerups(BITMAP *buffer, Powerup powerups[], int max)
                 lettre[0] = 'T';
             }
 
-            // Dessiner un carre
             int taille = 25;
             rectfill(buffer,
                      powerups[i].x - taille/2, powerups[i].y - taille/2,
@@ -93,7 +90,7 @@ void afficher_powerups(BITMAP *buffer, Powerup powerups[], int max)
                  powerups[i].x + taille/2, powerups[i].y + taille/2,
                  makecol(255, 255, 255));
 
-            // Dessiner la lettre au centre
+
             textout_centre_ex(buffer, font, lettre,
                               powerups[i].x, powerups[i].y - 4,
                               makecol(255, 255, 255), -1);
@@ -101,7 +98,7 @@ void afficher_powerups(BITMAP *buffer, Powerup powerups[], int max)
     }
 }
 
-// Le joueur ramasse-t-il un powerup ?
+
 int ramasser_powerup(Powerup powerups[], int max,
                      int joueur_x, int joueur_y,
                      int joueur_largeur, int joueur_hauteur)
@@ -112,7 +109,7 @@ int ramasser_powerup(Powerup powerups[], int max,
         if (powerups[i].actif)
         {
             int taille = 25;
-            // Test collision rectangle/rectangle
+
             if (powerups[i].x + taille/2 > joueur_x &&
                 powerups[i].x - taille/2 < joueur_x + joueur_largeur &&
                 powerups[i].y + taille/2 > joueur_y &&

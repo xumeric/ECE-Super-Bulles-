@@ -15,7 +15,6 @@ int rayon_selon_taille(int taille);
 void creer_bulles_niveau(Bulle bulles[], int max, int niveau, int ecran_x);
 
 // Divise une bulle en 2 bulles plus petites
-// index_bulle = indice de la bulle a diviser
 void diviser_bulle(Bulle bulles[], int max, int index_bulle);
 
 // Compte le nombre de bulles actives dans le tableau

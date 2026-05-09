@@ -1,6 +1,3 @@
-//
-// Created by xumer on 21/04/2026.
-//
 
 #ifndef SPACEGAME_GRAPHIQUE_H
 #define SPACEGAME_GRAPHIQUE_H

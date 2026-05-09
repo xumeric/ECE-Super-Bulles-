@@ -5,8 +5,7 @@
 #include <string.h>
 #include "../sauvegarde/sauvegarde.h"
 
-// Lit toutes les sauvegardes et les met dans le tableau
-// Retourne le nombre de sauvegardes lues
+
 int charger_toutes_sauvegardes(Sauvegarde tab[], int max)
 {
     FILE *f = fopen("sauvegarde.txt", "r");

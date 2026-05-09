@@ -1,10 +1,4 @@
-//
-// Created by xumer on 29/04/2026.
-//
 
-//
-// partie.h - Structures et helpers de l'etat du jeu
-//
 
 #ifndef SPACEGAME_PARTIE_H
 #define SPACEGAME_PARTIE_H
@@ -13,16 +7,16 @@
 
 #include "../constantes.h"
 
-// === STRUCTURE EXPLOSION ===
+
 typedef struct {
     int actif;
     float x, y;
-    int taille;     // 0-3 pour bulle, 4 pour boss
-    int frame;      // 0 a 4
+    int taille;
+    int frame;
     int compteur;
 } Explosion;
 
-// === STRUCTURE PARTIE : etat de progression ===
+
 typedef struct {
     int score;
     int niveau;
@@ -41,7 +35,6 @@ typedef struct {
     int taille_bulles_actuelle;
 } Partie;
 
-// === STRUCTURE ENTITES : tous les objets en jeu ===
 typedef struct {
     Joueur joueur;
     Boss boss;
@@ -51,11 +44,12 @@ typedef struct {
     Powerup *powerups;
     Eclair *eclairs;
     Tir *projectiles_boss;
+    Laser *lasers;
 
     Explosion explosions[MAX_EXPLOSIONS];
 } Entites;
 
-// === STRUCTURE ANIMATIONS ===
+
 typedef struct {
     int joueur_direction;
     int joueur_en_marche;
@@ -69,19 +63,16 @@ typedef struct {
     int anim_proj_boss_frame;
 } Animations;
 
-// === FONCTIONS D'INITIALISATION ===
+
 void init_partie(Partie *p);
 void init_entites(Entites *e, int taille_bulles_max);
 void liberer_entites(Entites *e);
 void init_animations(Animations *a);
 
-// === HELPERS DE GESTION ===
 
-// Reallouer le tableau de bulles selon le niveau
-// Retourne le nouveau pointeur (peut etre identique a l'ancien)
 Bulle *reallouer_bulles(Bulle *bulles, int *taille_actuelle, int nouveau_niveau);
 
-// Declenche une explosion a la position donnee, taille = niveau de l'asteroide (0-3) ou 4 pour boss
+
 void declencher_explosion(Explosion explosions[], int max, float x, float y, int taille);
 
 #endif

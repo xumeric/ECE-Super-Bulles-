@@ -18,7 +18,7 @@
 #include "constantes.h"
 #include "etat_boss/etat_boss.h"
 #include "etat_jeu/etat_jeu.h"
-
+#include "etat_bonus/etat_bonus.h"
 
 #define ERREUR(msg){\
     set_gfx_mode(GFX_TEXT,0,0,0,0);\
@@ -280,6 +280,22 @@ show_mouse(screen);
                 etat = ETAT_JEU;
                 charge = 0;
                 partie.decompte_initial = 240;   // 4 secondes de decompte
+
+                if (partie.niveau == 6)
+                {
+                    init_boss(&entites.boss, SCREEN_W);
+                    for (i = 0; i < MAX_PROJ_BOSS; i++) entites.projectiles_boss[i].actif = 0;
+                    for (i = 0; i < partie.taille_bulles_actuelle; i++) entites.bulles[i].actif = 0;
+                    etat = ETAT_BOSS;
+                }
+                else
+                {
+                    // Niveau normal : on prépare les bulles
+                    entites.bulles = reallouer_bulles(entites.bulles, &partie.taille_bulles_actuelle, partie.niveau);
+                    creer_bulles_niveau(entites.bulles, partie.taille_bulles_actuelle, partie.niveau, SCREEN_W);
+                    partie.temps_restant = (50 + partie.niveau * 10) * 60;
+                    etat = ETAT_JEU;
+                }
             }
         }
         else if (etat == ETAT_JEU)
@@ -291,6 +307,11 @@ show_mouse(screen);
         {
             etat = gerer_etat_boss(buffer, &assets, &partie, &entites, &animations,
                                    couleur, Gravite, &fin);
+        }
+        else if (etat == ETAT_BONUS)
+        {
+            etat = gerer_etat_bonus(buffer, &assets, &partie, &entites, &animations,
+                                    couleur, &fin);
         }
         else if (etat == ETAT_PAUSE)
         {

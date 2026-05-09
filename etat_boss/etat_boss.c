@@ -23,13 +23,31 @@
 #include "../eclair/eclair.h"
 #include "../sauvegarde/sauvegarde.h"
 
+
+static int declencher_laser(Laser lasers[], int max, float x_visee)
+{
+    int i;
+    for (i = 0; i < max; i++)
+    {
+        if (!lasers[i].actif)
+        {
+            lasers[i].actif = 1;
+            lasers[i].x = x_visee;
+            lasers[i].etat = 0;       // 0 = warning
+            lasers[i].timer = 60;     // 1 seconde de warning
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                     Partie *p, Entites *e, Animations *a,
                     int couleur, float gravite, int *fin)
 {
     int nouvel_etat = ETAT_BOSS;
 
-    // Avancer les animations (e->boss et ses projectiles)
+    // Avancer les animations
     a->anim_boss_compteur++;
     if (a->anim_boss_compteur >= DUREE_FRAME_BOSS)
     {
@@ -48,8 +66,9 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     blit(assets->fonds[5], buffer, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
 
     // Deplacement du e->joueur
-    // Mise a jour direction et etat de marche
-    a->joueur_en_marche = 0;  // par defaut, immobile
+
+    a->joueur_en_marche = 0;
+
     // Deplacement du e->joueur
     if (key[KEY_LEFT])
     {
@@ -63,7 +82,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         a->joueur_direction = 1;
         a->joueur_en_marche = 1;
     }
-    // Avancer l'animation de marche
+
     if (a->joueur_en_marche)
     {
         a->anim_joueur_compteur++;
@@ -75,7 +94,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     }
     else
     {
-        a->anim_joueur_frame = 0;  // reset quand on s'arrete
+        a->anim_joueur_frame = 0;
     }
 
     if (key[KEY_ESC] || key[KEY_P])
@@ -86,11 +105,10 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     if (e->joueur.x < 0) e->joueur.x = 0;
     if (e->joueur.x > SCREEN_W - e->joueur.largeur) e->joueur.x = SCREEN_W - e->joueur.largeur;
 
-    // Pendant le decompte initial : afficher le chiffre et sauter la logique
     if (p->decompte_initial > 0)
     {
-        // Afficher le e->joueur (deja affiche au-dessus)
-        // Choisir le bon sprite (idle ou frame de course)
+
+        // Choisir le bon sprite
         BITMAP *sprite_joueur = a->joueur_en_marche ? assets->joueur_run[a->anim_joueur_frame] : assets->joueur_idle;
 
         // Calcul position : centrer horizontalement, aligner par le bas avec la hitbox
@@ -109,7 +127,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         }
 
         // Calculer quel chiffre afficher
-        int chiffre = (p->decompte_initial / 60) ;   // 240->4, 180->3, 120->2, 60->1
+        int chiffre = (p->decompte_initial / 60) ;
         char texte_chiffre[10];
 
         if (chiffre >= 4)
@@ -121,19 +139,18 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         else
             strcpy(texte_chiffre, "GO !");
 
-        // Afficher le chiffre en GROS au centre
+        // Afficher le chiffre
         textout_centre_ex(buffer, font, texte_chiffre,
                           SCREEN_W / 2, SCREEN_H / 2,
                           makecol(255, 255, 0), -1);
 
-        // Afficher "BOSS INCOMING !"
         textout_centre_ex(buffer, font, "BOSS INCOMING !",
                           SCREEN_W / 2, 100,
                           makecol(255, 50, 50), -1);
 
         p->decompte_initial--;
 
-        return nouvel_etat;   // saute le reste de la boucle while
+        return nouvel_etat;
     }
 
 
@@ -167,20 +184,115 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     update_boss(&e->boss, SCREEN_W);
 
     // Le e->boss tire si son timer est a 0
-    if (e->boss.actif && e->boss.timer_tir == 0)
+    if (e->boss.actif && e->boss.timer_tir == 0
+     && e->boss.timer_transition == 0)
     {
-        boss_tirer(&e->boss, e->projectiles_boss, MAX_PROJ_BOSS);
-        e->boss.timer_tir = 15;
+        if (e->boss.phase == 3)
+        {
+            float angles[5] = {-2.0, -1.0, 0.0, 1.0, 2.0};   // déviations en X
+            int j;
+            for (j = 0; j < 5; j++)
+            {
+                int k;
+                for (k = 0; k < MAX_PROJ_BOSS; k++)
+                {
+                    if (!e->projectiles_boss[k].actif)
+                    {
+                        e->projectiles_boss[k].actif = 1;
+                        e->projectiles_boss[k].x = e->boss.x + e->boss.largeur / 2;
+                        e->projectiles_boss[k].y = e->boss.y + e->boss.hauteur;
+                        e->projectiles_boss[k].vx = angles[j];
+                        break;
+                    }
+                }
+            }
+
+            e->boss.timer_tir = 30;
+        }
+        else
+        {
+            // Tir normal
+            boss_tirer(&e->boss, e->projectiles_boss, MAX_PROJ_BOSS);
+            e->boss.timer_tir = 60;
+        }
     }
 
     // Le e->boss lache une bulle si son timer est a 0
     if (e->boss.actif && e->boss.timer_bulle == 0)
     {
         boss_lacher_bulle(&e->boss, e->bulles, p->taille_bulles_actuelle);
-        e->boss.timer_bulle = 15;
+        e->boss.timer_bulle = (e->boss.phase == 3) ? 150 : 300;
     }
 
-    // Physique et affichage des e->bulles
+    // lasers
+    if (e->boss.actif && e->boss.phase >= 2 && e->boss.timer_laser == 0
+        && e->boss.timer_transition == 0)
+    {
+        // Vise la position actuelle du joueur
+        float x_cible = e->joueur.x + e->joueur.largeur / 2;
+        declencher_laser(e->lasers, MAX_LASERS, x_cible);
+
+        e->boss.timer_laser = (e->boss.phase == 3) ? 90 : 180;
+    }
+
+    int li;
+    for (li = 0; li < MAX_LASERS; li++)
+    {
+        if (!e->lasers[li].actif) continue;
+
+        e->lasers[li].timer--;
+
+        if (e->lasers[li].etat == 0)
+        {
+            // zone rouge clignotante
+            if (e->lasers[li].timer % 8 < 4)   // clignote toutes les 4 frames
+            {
+                int x = (int)e->lasers[li].x - 8;
+                rectfill(buffer, x, 0, x + 16, SCREEN_H, makecol(255, 50, 50));
+            }
+
+            // Fin du warning: passage en strike
+            if (e->lasers[li].timer <= 0)
+            {
+                e->lasers[li].etat = 1;       // strike
+                e->lasers[li].timer = 48;     // 0.8s de strike
+            }
+        }
+        else
+        {
+            // PHASE STRIKE : afficher le sprite + tester collision
+            BITMAP *spr = assets->sprite_laser;
+
+            int y;
+            for (y = 0; y < SCREEN_H; y += spr->h)
+            {
+                draw_sprite(buffer, spr, (int)e->lasers[li].x - spr->w / 2, y);
+            }
+
+            // Collision avec le joueur
+            int laser_x = (int)e->lasers[li].x;
+            if (laser_x + 8 > e->joueur.x &&
+                laser_x - 8 < e->joueur.x + e->joueur.largeur)
+            {
+                if (p->bouclier_actif)
+                {
+                    p->bouclier_actif = 0;
+                    e->lasers[li].actif = 0;
+                }
+                else
+                {
+                    nouvel_etat = ETAT_GAME_OVER;
+                }
+            }
+
+            // Fin du strike: laser disparaît
+            if (e->lasers[li].timer <= 0)
+            {
+                e->lasers[li].actif = 0;
+            }
+        }
+    }
+
     int i;
     for (i = 0; i < p->taille_bulles_actuelle; i++)
     {
@@ -189,7 +301,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
             deplacer_bulle(&e->bulles[i], gravite);
             rebonds_bulle(&e->bulles[i], SCREEN_W, SCREEN_H);
 
-            // Collision avec e->joueur
+            // Collision
             if (collision_bulle_joueur(&e->bulles[i],
                                        e->joueur.x, e->joueur.y,
                                        e->joueur.largeur, e->joueur.hauteur))
@@ -205,14 +317,13 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                 }
             }
 
-            // e->bulles[i].taille va de 0 (plus gros) a 3 (plus petit)
             BITMAP *sprite = assets->asteroides[e->bulles[i].taille];
             draw_sprite(buffer, sprite,
                         e->bulles[i].x - sprite->w / 2,
                         e->bulles[i].y - sprite->h / 2);
         }
     }
-    // MISE A JOUR ET AFFICHAGE DES EXPLOSIONS
+
     int ex_b;
     for (ex_b = 0; ex_b < MAX_EXPLOSIONS; ex_b++)
     {
@@ -251,7 +362,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                         e->tirs[i].actif = 0;
                         declencher_explosion(e->explosions, MAX_EXPLOSIONS,
                         e->bulles[j].x, e->bulles[j].y, e->bulles[j].taille);
-                        e->bulles[j].actif = 0;   // pas de division en mode e->boss
+                        e->bulles[j].actif = 0;
                         p->score += 100;
                         // 20% de chance de creer un powerup
                         if (rand() % 100 < 20)
@@ -265,12 +376,13 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Deplacement des projectiles du e->boss et collision avec e->joueur
+    // Deplacement des projectiles
     for (i = 0; i < MAX_PROJ_BOSS; i++)
     {
         if (e->projectiles_boss[i].actif)
         {
             e->projectiles_boss[i].y += 5;
+            e->projectiles_boss[i].x += e->projectiles_boss[i].vx;
 
             if (e->projectiles_boss[i].y > SCREEN_H)
             {
@@ -284,7 +396,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                             e->projectiles_boss[i].y - frame_pb->h / 2);
             }
 
-            // Collision avec le e->joueur
+            // Collision
             if (e->projectiles_boss[i].x + 8 > e->joueur.x &&
                 e->projectiles_boss[i].x - 8 < e->joueur.x + e->joueur.largeur &&
                 e->projectiles_boss[i].y + 8 > e->joueur.y &&
@@ -303,11 +415,11 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Cooldown du e->joueur
+    // Cooldown
     if (p->tir_cooldown > 0) p->tir_cooldown--;
     if (p->tir_double_timer > 0) p->tir_double_timer--;
 
-    // Tir du e->joueur
+    // Tir
     if (key[KEY_SPACE] && p->tir_cooldown == 0)
     {
         if (p->tir_double_timer > 0)
@@ -341,7 +453,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         }
     }
 
-    // Deplacement et collision des e->tirs (avec le e->boss)
+    // Deplacement et collision
     for (i = 0; i < MAX_TIRS; i++)
     {
         if (e->tirs[i].actif)
@@ -362,7 +474,6 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                 e->tirs[i].actif = 0;
                 e->boss.hp--;
 
-                // Si le e->boss est mort
                 if (e->boss.hp <= 0)
                 {
                     e->boss.actif = 0;
@@ -370,26 +481,23 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                         e->boss.x + e->boss.largeur/2, e->boss.y + e->boss.hauteur/2, 4);
                     p->score += 5000;
 
-                    // Nettoyer projectiles et e->bulles
+                    // Nettoyer projectiles et bulles
                     int k;
                     for (k = 0; k < MAX_PROJ_BOSS; k++) e->projectiles_boss[k].actif = 0;
                     for (k = 0; k < p->taille_bulles_actuelle; k++) e->bulles[k].actif = 0;
+                    for (k = 0; k < MAX_LASERS; k++) e->lasers[k].actif = 0;
 
                     sauvegarder_partie(p->pseudo, p->score, p->niveau);
-                    nouvel_etat = ETAT_VICTOIRE;
+                    nouvel_etat = ETAT_BONUS;
                 }
             }
         }
     }
 
-    // Affichage e->joueur (couleur normale ou rouge si tir double)
-    int couleur_joueur = couleur;
-    if (p->tir_double_timer > 0) couleur_joueur = makecol(255, 50, 50);
-
-    // Choisir le bon sprite (idle ou frame de course)
+    // Choisir le bon sprite
     BITMAP *sprite_joueur = a->joueur_en_marche ? assets->joueur_run[a->anim_joueur_frame] : assets->joueur_idle;
 
-    // Calcul position : centrer horizontalement, aligner par le bas avec la hitbox
+    // Calcul position
     int sx = e->joueur.x + e->joueur.largeur / 2 - sprite_joueur->w / 2;
     int sy = e->joueur.y + e->joueur.hauteur - sprite_joueur->h;
 
@@ -398,7 +506,6 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     else
         draw_sprite_h_flip(buffer, sprite_joueur, sx, sy);
 
-    // Affichage bouclier autour du e->joueur
     if (p->bouclier_actif)
     {
         circle(buffer, e->joueur.x + e->joueur.largeur/2, e->joueur.y + e->joueur.hauteur/2,
@@ -407,12 +514,25 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
                38, makecol(100, 180, 255));
     }
 
-    // Affichage e->boss
+    // Affichage
     if (e->boss.actif)
     {
         int couleur_boss;
 
-        draw_sprite(buffer, assets->boss_frames[a->anim_boss_frame], e->boss.x, e->boss.y);
+        BITMAP *spr_boss = assets->boss_frames[a->anim_boss_frame];
+
+        if (e->boss.timer_transition > 0)
+        {
+            // === FLASH BLANC pendant la transition de phase ===
+            drawing_mode(DRAW_MODE_TRANS, NULL, 0, 0);
+            set_trans_blender(255, 255, 255, 200);
+            draw_sprite(buffer, spr_boss, e->boss.x, e->boss.y);
+            solid_mode();
+        }
+        else
+        {
+            draw_sprite(buffer, spr_boss, e->boss.x, e->boss.y);
+        }
 
         // Barre de vie
         int largeur_barre = 200;
@@ -435,6 +555,12 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         textout_centre_ex(buffer, font, "BOSS",
                           SCREEN_W / 2, 10, makecol(255, 255, 0), -1);
     }
+
+    char texte_phase[20];
+    sprintf(texte_phase, "PHASE %d", e->boss.phase);
+    textout_centre_ex(buffer, font, texte_phase,
+                      SCREEN_W / 2, 50,
+                      makecol(255, 255, 0), -1);
 
     // HUD des effets actifs
     int hud_y = SCREEN_H - 50;
@@ -466,7 +592,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         e->boss.actif = 0;
         p->score += 5000;
         sauvegarder_partie(p->pseudo, p->score, p->niveau);
-        nouvel_etat = ETAT_VICTOIRE;
+        nouvel_etat = ETAT_BONUS;
     }
     return nouvel_etat;
 }
