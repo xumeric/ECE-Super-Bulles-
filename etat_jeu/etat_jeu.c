@@ -454,6 +454,10 @@ int gerer_etat_jeu(BITMAP *buffer, Assets *assets,
     {
         nouvel_etat = ETAT_BONUS;
     }
+    if (key[KEY_F4])
+    {
+        nouvel_etat = ETAT_VICTOIRE;
+    }
 
     return nouvel_etat;
 }

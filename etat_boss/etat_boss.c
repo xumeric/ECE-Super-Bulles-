@@ -213,7 +213,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
         {
             // Tir normal
             boss_tirer(&e->boss, e->projectiles_boss, MAX_PROJ_BOSS);
-            e->boss.timer_tir = 60;
+            e->boss.timer_tir = 15;
         }
     }
 
@@ -221,7 +221,7 @@ int gerer_etat_boss(BITMAP *buffer, Assets *assets,
     if (e->boss.actif && e->boss.timer_bulle == 0)
     {
         boss_lacher_bulle(&e->boss, e->bulles, p->taille_bulles_actuelle);
-        e->boss.timer_bulle = (e->boss.phase == 3) ? 150 : 300;
+        e->boss.timer_bulle = (e->boss.phase == 3) ? 15 : 30;
     }
 
     // lasers

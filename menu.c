@@ -255,7 +255,7 @@ int afficher_menu(BITMAP *buffer,
 
 
 
-    // Clics (avec protection anti-maintien)
+    // Clics
     if ((mouse_b & 1) && !(*clic_presse))
     {
         *clic_presse = 1;
@@ -308,7 +308,6 @@ int afficher_reprendre(BITMAP *buffer,
         textout_centre_ex(buffer, font, texte,
                           ecran_x/2, by + 10, makecol(255,255,255), -1);
 
-        // Clic = on note l'index choisi
         if (survol && (mouse_b & 1) && !(*clic_presse))
         {
             *clic_presse = 1;
@@ -344,7 +343,6 @@ int afficher_pause(BITMAP *buffer, Bouton *bouton_reprendre,
     int retour = 0;
 
 
-    // 1. Overlay semi-transparent simulé avec pattern de pixels
     int px, py;
     int noir = makecol(0, 0, 0);
     for (py = 0; py < ecran_y; py += 2)
@@ -378,7 +376,7 @@ int afficher_pause(BITMAP *buffer, Bouton *bouton_reprendre,
     dessiner_bouton(buffer, bouton_menu);
     dessiner_bouton(buffer, bouton_quitter);
 
-    // Détection du clic (avec anti-maintien)
+    // Détection du clic
     if ((mouse_b & 1) && !(*clic_presse))
     {
         *clic_presse = 1;

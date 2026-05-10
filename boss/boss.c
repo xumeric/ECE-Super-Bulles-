@@ -16,7 +16,7 @@ void init_boss(Boss *boss, int ecran_x)
     boss->timer_teleport = 30;
     boss->timer_tir = 90;
     boss->timer_bulle = 300;
-    boss->vx = 4.0;                // vitesse de glissement
+    boss->vx = 5.0;                // vitesse de glissement
     boss->mode = 0;
     boss->timer_mode = 240;
     boss->phase = 1;
