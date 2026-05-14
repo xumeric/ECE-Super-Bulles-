@@ -12,7 +12,7 @@ add_executable(SpaceGame main.c
         boss/boss.c
         powerup/powerup.c
         eclair/eclair.c
-        menu.c
+        menu/menu.c
         assets/assets.c
         partie/partie.c
         etat_jeu/etat_jeu.c
